@@ -5,7 +5,7 @@ use std::env::args;
 use aoc2019::day::Day;
 use aoc2019::day1::Day1;
 use aoc2019::day2::Day2;
-
+use aoc2019::day3::Day3;
 
 fn print(day: &impl Day) {
     println!("day{0}:", day.number());
@@ -26,6 +26,10 @@ fn main()
                     },
                     2 => {
                         let d = Day2{};
+                        print(&d)
+                    },
+                    3 => {
+                        let d = Day3{};
                         print(&d)
                     }
                     _ => {
