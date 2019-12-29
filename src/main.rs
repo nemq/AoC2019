@@ -6,6 +6,7 @@ use aoc2019::day::Day;
 use aoc2019::day1::Day1;
 use aoc2019::day2::Day2;
 use aoc2019::day3::Day3;
+use aoc2019::day4::Day4;
 
 fn print(day: &impl Day) {
     println!("day{0}:", day.number());
@@ -30,6 +31,10 @@ fn main()
                     },
                     3 => {
                         let d = Day3{};
+                        print(&d)
+                    },
+                    4 => {
+                        let d = Day4{};
                         print(&d)
                     }
                     _ => {
