@@ -15,20 +15,16 @@ pub trait Day {
 
     fn number(&self) -> u8;
 
-    fn first_input(&self) -> PathBuf {
+    fn input(&self) -> PathBuf {
         let dir = self.input_dir();
-        dir.join("first.txt")
+        let day = format!("day{}.txt", self.number());
+        dir.join(day)
     }
 
-    fn second_input(&self) -> PathBuf {
-        let dir = self.input_dir();
-        dir.join("second.txt")
-    }
 
     fn input_dir(&self) -> PathBuf {
         let root = env::current_dir().unwrap();
-        let day = format!("day{}", self.number());
-        root.join("input").join(day)
+        root.join("input")
     }
 
     fn read_input_lines<F, T> (&self, input: &Path, map: F) -> Vec<T> 
@@ -84,36 +80,17 @@ mod tests
 
 
     #[test]
-    fn first_input_exists() {
-        let path = DAY0.first_input();
+    fn input_exists() {
+        let path = DAY0.input();
         assert!(path.exists());
     }
 
     #[test]
-    fn second_input_exists() {
-        let path = DAY0.second_input();
-        assert!(path.exists());
-    }
-
-    #[test]
-    fn read_first_input() {
-        let path = DAY0.first_input();
-        let lines = DAY0.read_input_lines_string(&path);
-        assert_eq!(lines, vec![
-            String::from("a"), 
-            String::from("b"), 
-            String::from("c")
-        ]);
-    }
-
-    #[test]
-    fn read_second_input() {
-        let path = DAY0.second_input();
+    fn read_input() {
+        let path = DAY0.input();
         let lines = DAY0.read_input_lines(&path, |l| l.parse::<u32>().unwrap());
         assert_eq!(lines, vec![1u32, 2u32, 3u32]);
     }
-
-
 }
 
 

@@ -9,7 +9,7 @@ pub struct Day2 {
 impl Day2 {
 
     pub fn read_program(&self) -> Vec<usize> {
-        let path = self.first_input();
+        let path = self.input();
         let lines = self.read_input_lines_string(&path);
         let program = lines[0].split(',').map(|t| t.parse::<usize>().unwrap()).collect();
         program

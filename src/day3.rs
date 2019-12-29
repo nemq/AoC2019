@@ -10,7 +10,7 @@ impl Day3 {
    
 
     pub fn read_curves(&self) -> (Curve, Curve) {
-       let path = self.first_input();
+       let path = self.input();
        let lines: Vec<String> = self.read_input_lines_string(&path);
 
        if lines.len() != 2 {

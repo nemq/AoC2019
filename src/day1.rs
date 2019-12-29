@@ -29,7 +29,7 @@ impl Day for Day1 {
 impl Day1 {
 
     fn read_mases(&self) -> Vec<u32> {
-        let path = self.first_input();
+        let path = self.input();
         let mases = self.read_input_lines(&path, |l| l.parse::<u32>().unwrap());
         mases
     }
