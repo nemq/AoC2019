@@ -1,24 +1,14 @@
 
 use crate::day::Day;
-use crate::intcode::IntCodePC;
+use crate::intcode::{IntCodePC, read_program};
 
 pub struct Day2 {
 
 }
 
-impl Day2 {
-
-    pub fn read_program(&self) -> Vec<i32> {
-        let path = self.input();
-        let lines = self.read_input_lines_string(&path);
-        let program = lines[0].split(',').map(|t| t.parse::<i32>().unwrap()).collect();
-        program
-    }
-}
-
 impl Day for Day2 {
     fn first_puzzle(&self) -> String {
-        let program = self.read_program();
+        let program = read_program(self);
         let mut i = std::io::empty();
         let mut o = std::io::sink();
         let mut pc = IntCodePC::new(program, &mut i, &mut o);
@@ -29,7 +19,7 @@ impl Day for Day2 {
 
     fn second_puzzle(&self) -> String {
 
-        let program = self.read_program();
+        let program = read_program(self);
 
         let mut i = std::io::empty();
         let mut o = std::io::sink();
