@@ -37,17 +37,3 @@ impl Day for Day5 {
         5
     }
 }
-
-
-#[cfg(test)]
-mod tests 
-{
-    use super::*;
-
-    static DAY5: Day5 = Day5 {};
-
-    #[test]
-    fn read_bounds() {
-    }
-    
-}
