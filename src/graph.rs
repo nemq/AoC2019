@@ -1,26 +1,27 @@
 use std::collections::HashMap;
 use std::iter::{Iterator};
 
+pub type Edge<'a, Vertex, Weight> = (&'a Vertex, &'a Vertex, &'a Weight);
 
-pub struct Graph<Vertex: PartialEq, E> {
+pub struct Graph<Vertex: PartialEq, Weight> {
     id: usize,
     vertices: HashMap<usize, Vertex>,
-    edges: Vec<Edge<E>>
+    edges: Vec<(usize, usize, Weight)>
 }
 
-impl<Vertex, E> Graph<Vertex, E> where Vertex: PartialEq {
-    pub fn new() -> Graph<Vertex, E> {
+impl<Vertex, Weight> Graph<Vertex, Weight> where Vertex: PartialEq {
+    pub fn new() -> Graph<Vertex, Weight> {
         Graph{id: 0, vertices: HashMap::new(), edges: Vec::new()}
     }
 
-    pub fn add_edge(&mut self, start: Vertex, end: Vertex, weight: E) {
+    pub fn add_edge(&mut self, start: Vertex, end: Vertex, weight: Weight) {
 
         let start_vert = self.add_vert_priv(start);
         let end_vert = self.add_vert_priv(end);
-        self.add_edge_priv(start_vert, end_vert,  weight);
+        self.add_edge_priv(start_vert, end_vert, weight);
     }
 
-    pub fn find_edge(&self, start: &Vertex, end: &Vertex) -> Option<&Edge<E>> {
+    pub fn find_edge<'g>(&'g self, start: &Vertex, end: &Vertex) -> Option<Edge<'g, Vertex, Weight>> {
 
         let start_vert =  self.find_vert_priv(start);
         let end_vert = self.find_vert_priv(end);
@@ -32,7 +33,7 @@ impl<Vertex, E> Graph<Vertex, E> where Vertex: PartialEq {
         }
     }
 
-    pub fn find_route(&self, start: &Vertex, end: &Vertex) -> Option<Vec<&Edge<E>>> {
+    pub fn find_route<'g>(&'g self, start: &Vertex, end: &Vertex) -> Option<Vec<Edge<'g, Vertex, Weight>>> {
 
         let start_vert =  self.find_vert_priv(start);
         let end_vert = self.find_vert_priv(end);
@@ -49,6 +50,9 @@ impl<Vertex, E> Graph<Vertex, E> where Vertex: PartialEq {
         VertIter {inner_iter: self.vertices.iter()}
     }
 
+    pub fn edges<'g>(&'g self) -> EdgeIter<'g, Vertex, Weight> {
+        EdgeIter{graph: self, inner_iter: self.edges.iter()}
+    }
 
     fn add_vert_priv(&mut self, v: Vertex) -> usize {
 
@@ -62,10 +66,9 @@ impl<Vertex, E> Graph<Vertex, E> where Vertex: PartialEq {
         }
     }
 
-    fn add_edge_priv(&mut self, start: usize, end: usize, weight: E) {
-        self.edges.push(Edge::new(start,end, weight))
+    fn add_edge_priv(&mut self, start: usize, end: usize, weight: Weight) {
+        self.edges.push((start,end, weight))
     }
-
 
     fn find_vert_priv(&self, v: &Vertex) -> Option<usize> {
         match self.vertices.iter().find(|(_, vert)| *vert == v) {
@@ -78,11 +81,14 @@ impl<Vertex, E> Graph<Vertex, E> where Vertex: PartialEq {
         self.vertices.get(&id).expect(&format!("not existing id: {}", id))
     }
 
-    fn find_edge_priv(&self, start: usize, end: usize) -> Option<&Edge<E>> {
-        self.edges.iter().find(|&e| e.start == start && e.end == end)
+    fn find_edge_priv<'g>(&'g self, start: usize, end: usize) -> Option<Edge<'g, Vertex, Weight>> {
+        match self.edges.iter().find(|(s, e, _)| *s == start && *e == end) {
+            Some((s, e, w)) => Some((self.get_vert_priv(*s), self.get_vert_priv(*e), &w)),
+            None => None
+        }
     }
 
-    fn find_route_priv(&self, start: usize, end: usize) -> Option<Vec<&Edge<E>>> {
+    fn find_route_priv<'g>(&'g self, start: usize, end: usize) -> Option<Vec<Edge<'g, Vertex,Weight>>> {
 
         match self.find_edge_priv(start, end) {
             Some(direct) => return Some(vec![direct]),
@@ -90,10 +96,10 @@ impl<Vertex, E> Graph<Vertex, E> where Vertex: PartialEq {
         }
 
         let mut route = Vec::new();
-        for e in self.edges.iter().filter(|&e| e.start == start) {
-            match self.find_route_priv(e.end, end) {
+        for (s, e, w) in self.edges.iter().filter(|(s, _, _)| *s == start) {
+            match self.find_route_priv(*e, end) {
                 Some(mut sub_route) => {
-                    route.push(e);
+                    route.push((self.get_vert_priv(*s), self.get_vert_priv(*e), w));
                     route.append(&mut sub_route);
                     break; 
                 },
@@ -125,34 +131,23 @@ impl<'a, Vertex> Iterator for VertIter<'a, Vertex> where Vertex: PartialEq {
 }
 
 
+pub struct EdgeIter<'a, Vertex, Weight> where Vertex : PartialEq {
+    graph: &'a Graph<Vertex, Weight>,
+    inner_iter: std::slice::Iter<'a, (usize, usize, Weight)>
+}
 
-pub struct Edge<E> {
-    start: usize,
-    end: usize,
-    weight: E
-} 
-
-impl<E> Edge<E> {
-    pub fn new(start: usize, end: usize, weight: E) -> Edge<E> {
-        Edge {start, end, weight}
+impl<'a, Vertex, Weight> Iterator for EdgeIter<'a, Vertex, Weight> where Vertex: PartialEq {
+    type Item = Edge<'a, Vertex, Weight>;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.inner_iter.next() {
+            Some((s, e, w)) => Some((self.graph.get_vert_priv(*s), self.graph.get_vert_priv(*e), w)),
+            None => None
+        }
     }
 }
 
 
-struct Vertex<V> {
-    val: V
-}
-
-
-impl<V> Vertex<V> {
-    pub fn new(val: V) -> Vertex<V> {
-        Vertex {val}
-    }
-
-    pub fn val(&self) -> &V {
-        &self.val
-    }
-}
 
 #[cfg(test)]
 mod tests 
@@ -242,5 +237,42 @@ mod tests
         assert!(graph.find_route(&d, &b).is_none());
         assert!(graph.find_route(&i, &l).is_none());
     }
+
+
+    #[test]
+    fn vertices() {
+        let (a, b, c) = (String::from("A"), String::from("B"), String::from("C"));
+
+        let mut graph: Graph<String, usize> = Graph::new();
+        graph.add_edge(a.clone(), b.clone(), 1);
+        graph.add_edge(b.clone(), c.clone(), 1);
+
+        let mut it = graph.vertices();
+
+        let valid = |v: &String| -> bool {
+            *v == a || *v ==b || *v == c
+        };
+
+        assert!(valid(it.next().unwrap()));
+        assert!(valid(it.next().unwrap()));
+        assert!(valid(it.next().unwrap()));
+        assert!(it.next().is_none());
+    }
+
+    #[test]
+    fn edges() {
+        let (a, b, c) = (String::from("A"), String::from("B"), String::from("C"));
+
+        let mut graph: Graph<String, usize> = Graph::new();
+        graph.add_edge(a.clone(), b.clone(), 1);
+        graph.add_edge(b.clone(), c.clone(), 1);
+
+        let mut it = graph.edges();
+
+        assert_eq!(it.next().unwrap(), (&a, &b, &1));
+        assert_eq!(it.next().unwrap(), (&b, &c, &1));
+        assert!(it.next().is_none());
+    }
+
 
 }
