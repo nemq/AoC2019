@@ -133,7 +133,7 @@ impl<'i, 'o> IntCodePC<'i, 'o> {
                         self.program[pos as usize] = val;
                     },
                     Err(e) => {
-                        panic!(format!("NaN: {}", e.description()))}
+                        panic!(format!("NaN: {} [{}]", e.description(), buf))}
                 }
             },
             Err(e) => panic!(format!("Failed to read from cin: {}", e.description()))

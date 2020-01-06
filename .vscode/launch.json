@@ -9,7 +9,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/aoc2019.exe ",
-            "args": ["6"],
+            "args": ["7"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
