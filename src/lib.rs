@@ -1,4 +1,4 @@
-mod intcode;
+pub mod intcode;
 mod graph;
 
 pub mod day;

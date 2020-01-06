@@ -17,8 +17,7 @@ fn print(day: &impl Day) {
     println!("\tsecond puzzle: {0}", day.second_puzzle());
 }
 
-fn main() 
-{
+fn main() {
 
     match args().nth(1) {
         Some(day_arg) => {

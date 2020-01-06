@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Tomasz Sawka <sawka.tomek@gmail.com>"]
 edition = "2018"
 
+default-run = "aoc2019"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 permutohedron = "0.2.4"
