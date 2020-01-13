@@ -16,10 +16,9 @@ fn execute(prog: Vec<i32>) -> i32 {
     
     
     let sin = stdin();
-    let mut sin_lock = sin.lock();
     let mut sout = stdout();
 
-    let mut pc = IntCodePC::new(prog, &mut sin_lock, &mut sout);
+    let mut pc = IntCodePC::new_with_stdin(prog, &sin, &mut sout);
     pc.run()
 }
 

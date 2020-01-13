@@ -2,7 +2,7 @@ use crate::day::Day;
 use std::error::Error;
 use std::io::prelude::*;
 use std::collections::VecDeque;
-
+use std::cell::RefCell;
 
 
 pub fn read_program<D: Day>(day: &D) -> Vec<i32> {
@@ -10,6 +10,11 @@ pub fn read_program<D: Day>(day: &D) -> Vec<i32> {
     let lines = day.read_input_lines_string(&path);
     let program = lines[0].split(',').map(|t| t.parse::<i32>().unwrap()).collect();
     program
+}
+
+enum Input<'i> {
+    Stdin(&'i std::io::Stdin),
+    External(RefCell<&'i mut dyn BufRead>)
 }
 
 #[derive(PartialEq, Debug)]
@@ -35,14 +40,18 @@ pub struct IntCodePC<'i, 'o> {
     program: Vec<i32>,
     pc: usize,
     modes: VecDeque<ParamMode>,
-    i: &'i mut dyn BufRead,
+    i: Input<'i>,
     o: &'o mut dyn Write
 }
 
 impl<'i, 'o> IntCodePC<'i, 'o> {
 
     pub fn new<I: BufRead, O: Write>(program: Vec<i32>, i: &'i mut I, o: &'o mut O) -> IntCodePC<'i, 'o> {
-        IntCodePC {program, pc:0, modes: VecDeque::new(), i, o}
+        IntCodePC {program, pc:0, modes: VecDeque::new(), i: Input::External(RefCell::new(i)), o}
+    }
+
+    pub fn new_with_stdin<O : Write>(program: Vec<i32>, i: &'i std::io::Stdin,  o: &'o mut O) -> IntCodePC<'i, 'o> {
+        IntCodePC {program, pc:0, modes: VecDeque::new(), i: Input::Stdin(i), o}
     }
 
     pub fn alert1202(&mut self) {
@@ -126,20 +135,32 @@ impl<'i, 'o> IntCodePC<'i, 'o> {
     pub fn input(&mut self) {
         let pos = self.read_imm();
         let mut buf = String::new();
-        match self.i.read_line(&mut buf) {
+        match self.read_line(&mut buf) {
             Ok(_) => {
                 match buf.trim().parse::<i32>() {
                     Ok(val) => {
                         self.program[pos as usize] = val;
                     },
                     Err(e) => {
-                        panic!(format!("NaN: {} [{}]", e.description(), buf))}
+                        panic!(format!("NaN: {} [len: {} buf: {}]", e.description(), buf.len(), buf))}
                 }
             },
             Err(e) => panic!(format!("Failed to read from cin: {}", e.description()))
         }
 
     }
+
+    fn read_line(&self, buf: &mut String) -> std::io::Result<usize> {
+        match &self.i {
+            Input::Stdin(sin) => {
+                sin.read_line(buf)
+            },
+            Input::External(rc) => {
+                rc.borrow_mut().read_line(buf)
+            }
+        }
+    }
+
 
     pub fn output(&mut self) {
        let val = self.read(); 
@@ -225,6 +246,7 @@ impl<'i, 'o> IntCodePC<'i, 'o> {
         self.program[pos as usize] = val;
         self.pc += 1;
     }
+
 }
 
 

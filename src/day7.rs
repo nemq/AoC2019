@@ -3,6 +3,8 @@ extern crate permutohedron;
 use crate::day::Day;
 use crate::intcode::{IntCodePC, read_program};
 use permutohedron::LexicalPermutation;
+use std::process::*;
+use std::io::prelude::*;
 
 
 pub struct Day7 {
@@ -36,13 +38,86 @@ impl Day7 {
         let fin_out = String::from_utf8(e_out).unwrap();
         fin_out.trim_end().parse::<i32>().unwrap()
     }
+
+    pub fn run_amplifiers_chained(&self, prog_path: &String, phases: &[u8]) -> i32 {
+
+        let mut result = String::new();
+        let mut children = Vec::new();
+        for (id, p) in phases.iter().enumerate() {
+
+            let mut child = Command::new(r"target\release\intcodepc.exe")
+                .arg(prog_path.clone())
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .spawn()
+                .expect(&format!("failed to start intcodepc.exe [{}]", id));
+
+            {
+                let stdin = child.stdin.as_mut().expect(&format!("failed stdin [{}]", id));
+                if id == 0 {
+                    stdin.write_all(&[*p, b'\n', b'0', b'\n']).expect(&format!("failed to write to stdin [{}]", id));
+                } else {
+                    stdin.write_all(&[*p, b'\n']).expect(&format!("failed to write to stdin [{}]", id))
+                }
+            }
+
+            children.push(child);
+        }
+
+        let mut buffer = vec![0; 255];
+        let mut read;
+        let mut it = (0 .. phases.len()).cycle();
+        loop {
+            let src_idx = it.next().unwrap();
+            let dst_idx = if src_idx + 1 < phases.len() {
+                src_idx + 1
+            } else {
+                0
+            };
+
+            {
+                let source = &mut children[src_idx];
+                match source.try_wait() {
+                    Ok(Some(_)) => break,
+                    Ok(None) => {},
+                    Err(e) => panic!(e)
+                }
+
+                let stdout = source.stdout.as_mut().unwrap();
+                buffer.resize(255, 0);
+                read = stdout.read(&mut buffer).unwrap();
+                buffer.resize(read, 0);
+
+                if read > 0 && src_idx == children.len() -1 {
+                    result = String::from_utf8(buffer.clone()).unwrap();
+                }
+            }
+
+            {
+                let dest = &mut children[dst_idx];
+                match dest.try_wait() {
+                    Ok(Some(_)) => break ,
+                    Ok(None) => {},
+                    Err(e) => panic!(e)
+                }
+                let stdin = dest.stdin.as_mut().unwrap();
+                stdin.write_all(&buffer).unwrap();
+            }
+        }
+
+        for mut child in children.into_iter() {
+            child.wait().unwrap();
+        }
+
+        result.trim().parse().unwrap()
+    }
 }
 
 impl Day for Day7 {
     fn first_puzzle(&self) -> String {
 
         let prog = read_program(self);
-        let mut phases = [b'0',b'1',b'2', b'3', b'4'];
+        let mut phases = [b'0', b'1', b'2', b'3', b'4'];
         let mut max_signal = self.run_amplifiers(&prog, &phases);
         while phases.next_permutation() {
             let next_signal = self.run_amplifiers(&prog, &phases);
@@ -54,7 +129,16 @@ impl Day for Day7 {
 
     fn second_puzzle(&self) -> String {
 
-        format!("{}", "TODO")
+        let prog_path = String::from(self.input().to_str().unwrap());
+        let mut phases = [b'5', b'6', b'7', b'8', b'9'];
+        
+        let mut max_signal = self.run_amplifiers_chained(&prog_path, &phases);
+        while phases.next_permutation() {
+            let next_signal = self.run_amplifiers_chained(&prog_path, &phases);
+            max_signal = i32::max(max_signal, next_signal);
+        }
+
+        format!("{}", max_signal)
     }
 
     fn number(&self) -> u8 {
